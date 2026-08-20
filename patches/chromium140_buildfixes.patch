@@ -1,0 +1,26 @@
+diff --git a/components/guest_view/renderer/BUILD.gn b/components/guest_view/renderer/BUILD.gn
+index d12cd543e3b53..44bdc1ee30c66 100644
+--- a/components/guest_view/renderer/BUILD.gn
++++ b/components/guest_view/renderer/BUILD.gn
+@@ -6,7 +6,7 @@
+ # assert to prevent the accidental building of GuestViews on mobile
+ # platforms. If you're now using GuestViews on mobile, go ahead and
+ # remove this assert.
+-assert(!is_android && !is_ios)
++assert(!is_ios)
+ 
+ static_library("renderer") {
+   sources = [
+diff --git a/extensions/browser/guest_view/web_view/web_ui/BUILD.gn b/extensions/browser/guest_view/web_view/web_ui/BUILD.gn
+index 705272a94cba9..a8a24d2bcafb6 100644
+--- a/extensions/browser/guest_view/web_view/web_ui/BUILD.gn
++++ b/extensions/browser/guest_view/web_view/web_ui/BUILD.gn
+@@ -4,7 +4,7 @@
+ 
+ import("//extensions/buildflags/buildflags.gni")
+ 
+-assert(enable_extensions,
++assert(enable_extensions || enable_desktop_android_extensions,
+        "Cannot depend on extensions because enable_extensions=false.")
+ 
+ source_set("web_ui") {
