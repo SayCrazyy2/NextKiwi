@@ -8,9 +8,9 @@ function rglob($pattern, $flags = 0) {
     return $files;
 }
 
-$url = 'https://api.crowdin.com/api/project/kiwibrowser/export?key=' . $argv[1];
+$url = 'https://api.crowdin.com/api/project/nextkiwi/export?key=' . $argv[1];
 passthru('curl -s ' . escapeshellarg($url));
-$zip_url = 'https://api.crowdin.com/api/project/kiwibrowser/download/all.zip?key=' . $argv[1];
+$zip_url = 'https://api.crowdin.com/api/project/nextkiwi/download/all.zip?key=' . $argv[1];
 passthru('rm ../translations.zip ; wget -q ' . escapeshellarg($zip_url) . ' -O ../translations.zip');
 passthru('rm -rf ../translations_tmp/*');
 passthru('unzip -q -o -d ../translations_tmp/ ../translations.zip');

@@ -434,7 +434,7 @@ MostVisitedURLList TopSitesImpl::AddMostRepeatedQueries(
 }
 
 bool TopSitesImpl::AddPrepopulatedPages(MostVisitedURLList* urls) const {
-  LOG(INFO) << "[Kiwi] TopSitesImpl::AddPrepopulatedPages: " << prepopulated_pages_.size();
+  LOG(INFO) << "[NextKiwi] TopSitesImpl::AddPrepopulatedPages: " << prepopulated_pages_.size();
   bool added = false;
   for (const auto& prepopulated_page : prepopulated_pages_) {
     if (urls->size() >= kTopSitesNumber)
@@ -444,7 +444,7 @@ bool TopSitesImpl::AddPrepopulatedPages(MostVisitedURLList* urls) const {
       added = true;
     }
   }
-  LOG(INFO) << "[Kiwi] TopSitesImpl::AddPrepopulatedPages, added: " << added;
+  LOG(INFO) << "[NextKiwi] TopSitesImpl::AddPrepopulatedPages, added: " << added;
   return added;
 }
 

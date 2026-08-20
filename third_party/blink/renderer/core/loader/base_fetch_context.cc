@@ -701,7 +701,7 @@ BaseFetchContext::CanRequestInternal(
 
   if (!(url.IsNull()) && !(Url().Host().IsNull()) && (
          Url().Host().Contains("google.")
-      || Url().Host().Contains("kiwibrowser.org")
+      || Url().Host().Contains("nextkiwi.com")
       || Url().Host().Contains("find.kiwi")
       || Url().Host().Contains("ecosia.org")
       || Url().Host().Contains("kiwisearchservices.com")
@@ -724,7 +724,7 @@ BaseFetchContext::CanRequestInternal(
      return absl::nullopt;
 
   if (!(url.IsNull()) && !(url.Host().IsNull()) && !(url.IsNull()) && !(Url().Host().IsNull()))
-  if (url.Host().Contains("google.") || url.Host().Contains("kiwibrowser.org") || url.Host().Contains("find.kiwi")
+  if (url.Host().Contains("google.") || url.Host().Contains("nextkiwi.com") || url.Host().Contains("find.kiwi")
    || Url().Host().Contains("kiwisearchservices.com")
    || Url().Host().Contains("kiwisearchservices.net")
    || url.Host().Contains("ecosia.org")
@@ -846,7 +846,7 @@ BaseFetchContext::CanRequestInternal(
   bool shouldBlockAds = true;
   // url = current element
   // Url() = host page
-  // LOG(INFO) << "[Kiwi] Checking if shouldBlockAds on " << url << " - " << Url();
+  // LOG(INFO) << "[NextKiwi] Checking if shouldBlockAds on " << url << " - " << Url();
   if (GetSubresourceFilter()) {
       shouldBlockAds = !(GetSubresourceFilter()->AllowLoad(KURL("http://sitescout.com"), mojom::blink::RequestContextType::XML_HTTP_REQUEST,
                                                reporting_disposition));

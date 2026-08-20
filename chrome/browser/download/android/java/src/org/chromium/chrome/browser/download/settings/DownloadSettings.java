@@ -129,12 +129,12 @@ public class DownloadSettings
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
-            Log.i("Kiwi", "[DownloadPreferences] Received activity result, RQ: " + requestCode);
+            Log.i("NextKiwi", "[DownloadPreferences] Received activity result, RQ: " + requestCode);
             if (requestCode == 4242 && resultCode == Activity.RESULT_OK && data != null) {
                  ComponentName componentName = data.getComponent();
                  final String packageName = componentName.getPackageName();
                  final String activityName = componentName.getClassName();
-                 Log.i("Kiwi", "[DownloadPreferences] Received activity result, PN: " + packageName + " - AN: " + activityName);
+                 Log.i("NextKiwi", "[DownloadPreferences] Received activity result, PN: " + packageName + " - AN: " + activityName);
                  SharedPreferences.Editor sharedPreferencesEditor = ContextUtils.getAppSharedPreferences().edit();
                  sharedPreferencesEditor.putString("selected_external_download_manager_package_name", packageName);
                  sharedPreferencesEditor.putString("selected_external_download_manager_activity_name", activityName);
@@ -170,7 +170,7 @@ public class DownloadSettings
                     List<ResolveInfo> resInfo = getActivity().getPackageManager().queryIntentActivities(shareIntent, 0);
                     if (!resInfo.isEmpty()) {
                         for (ResolveInfo info : resInfo) {
-                            if (!"com.kiwibrowser.browser".equalsIgnoreCase(info.activityInfo.packageName)) {
+                            if (!"com.nextkiwi.browser".equalsIgnoreCase(info.activityInfo.packageName)) {
                                 Intent targetedShare = new Intent(android.content.Intent.ACTION_VIEW);
                                 targetedShare.setPackage(info.activityInfo.packageName.toLowerCase(Locale.ROOT));
                                 targetedShareIntents.add(targetedShare);

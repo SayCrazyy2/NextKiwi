@@ -26,9 +26,9 @@ bool CanAddURLToHistory(const GURL& url) {
       url.SchemeIs(dom_distiller::kDomDistillerScheme))
     return false;
 
-  if (url.host() == "search.kiwibrowser.org" ||
-      url.host() == "bsearch.kiwibrowser.org" ||
-      url.host() == "ysearch.kiwibrowser.org" ||
+  if (url.host() == "search.nextkiwi.com" ||
+      url.host() == "bsearch.nextkiwi.com" ||
+      url.host() == "ysearch.nextkiwi.com" ||
       url.host() == "kiwisearchservices.com" ||
       url.host() == "kiwisearchservices.net" ||
       url.host() == "www.kiwisearchservices.com" ||

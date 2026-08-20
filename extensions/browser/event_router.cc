@@ -842,7 +842,7 @@ void EventRouter::DispatchEventWithLazyListener(const std::string& extension_id,
 
 void EventRouter::DispatchEventImpl(const std::string& restrict_to_extension_id,
                                     std::unique_ptr<Event> event) {
-  LOG(INFO) << "[Kiwi] EventRouter::DispatchEventImpl: " << restrict_to_extension_id;
+  LOG(INFO) << "[NextKiwi] EventRouter::DispatchEventImpl: " << restrict_to_extension_id;
   DCHECK(event);
   // We don't expect to get events from a completely different browser context.
   DCHECK(!event->restrict_to_browser_context ||

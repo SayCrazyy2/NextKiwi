@@ -120,9 +120,9 @@ void InstantService::RemoveObserver(InstantServiceObserver* observer) {
 }
 
 void InstantService::OnNewTabPageOpened() {
-  LOG(INFO) << "[Kiwi] InstantService::OnNewTabPageOpened";
+  LOG(INFO) << "[NextKiwi] InstantService::OnNewTabPageOpened";
   if (most_visited_sites_) {
-    LOG(INFO) << "[Kiwi] InstantService::OnNewTabPageOpened - most_visited_sites_";
+    LOG(INFO) << "[NextKiwi] InstantService::OnNewTabPageOpened - most_visited_sites_";
     most_visited_sites_->Refresh();
     most_visited_sites_->RefreshTiles();
   }
@@ -221,7 +221,7 @@ void InstantService::OnURLsAvailable(
   // Use only personalized tiles for instant service.
   const ntp_tiles::NTPTilesVector& tiles =
       sections.at(ntp_tiles::SectionType::PERSONALIZED);
-  LOG(INFO) << "[Kiwi] InstantService::OnURLsAvailable - tiles: " << tiles.size();
+  LOG(INFO) << "[NextKiwi] InstantService::OnURLsAvailable - tiles: " << tiles.size();
   for (const ntp_tiles::NTPTile& tile : tiles) {
     InstantMostVisitedItem item;
     item.url = tile.url;
@@ -236,7 +236,7 @@ void InstantService::OnURLsAvailable(
 void InstantService::OnIconMadeAvailable(const GURL& site_url) {}
 
 void InstantService::NotifyAboutMostVisitedInfo() {
-  LOG(INFO) << "[Kiwi] InstantService::NotifyAboutMostVisitedInfo";
+  LOG(INFO) << "[NextKiwi] InstantService::NotifyAboutMostVisitedInfo";
   for (InstantServiceObserver& observer : observers_)
     observer.MostVisitedInfoChanged(*most_visited_info_);
 }

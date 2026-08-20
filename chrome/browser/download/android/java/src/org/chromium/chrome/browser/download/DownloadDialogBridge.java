@@ -110,7 +110,7 @@ public class DownloadDialogBridge implements DownloadLocationDialogController {
         String activeDownloadManagerActivityName = ContextUtils.getAppSharedPreferences().getString("selected_external_download_manager_activity_name", "");
         String activeDownloadManagerPackageName = ContextUtils.getAppSharedPreferences().getString("selected_external_download_manager_package_name", "");
 
-        if (useAdmIfPossible && !TextUtils.isEmpty(activeDownloadManagerPackageName) && !TextUtils.isEmpty(activeDownloadManagerActivityName) && activeDownloadManagerPackageName.equals("com.kiwibrowser.browser") != true
+        if (useAdmIfPossible && !TextUtils.isEmpty(activeDownloadManagerPackageName) && !TextUtils.isEmpty(activeDownloadManagerActivityName) && activeDownloadManagerPackageName.equals("com.nextkiwi.browser") != true
          && !TextUtils.isEmpty(urlToDownload) && (urlToDownload.toLowerCase(Locale.ROOT).startsWith("http:") || urlToDownload.toLowerCase(Locale.ROOT).startsWith("https:") || urlToDownload.toLowerCase(Locale.ROOT).startsWith("magnet:") || urlToDownload.toLowerCase(Locale.ROOT).startsWith("ftp:"))) {
             if (urlToDownload.toLowerCase(Locale.ROOT).contains(".googleusercontent.com/crx"))
                 return false;
@@ -129,11 +129,11 @@ public class DownloadDialogBridge implements DownloadLocationDialogController {
             intent.putExtra("filename", new File(suggestedPath).getName());
 
             try {
-                Log.i("Kiwi", "[Download] Starting activity intent [" + activeDownloadManagerPackageName + "/" + activeDownloadManagerActivityName + "]");
+                Log.i("NextKiwi", "[Download] Starting activity intent [" + activeDownloadManagerPackageName + "/" + activeDownloadManagerActivityName + "]");
                 activity.startActivity(intent);
                 return true;
             } catch (ActivityNotFoundException exception) {
-                Log.i("Kiwi", "[Download] Starting activity intent: ActivityNotFoundException");
+                Log.i("NextKiwi", "[Download] Starting activity intent: ActivityNotFoundException");
             }
         }
         return false;

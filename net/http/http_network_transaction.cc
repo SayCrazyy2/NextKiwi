@@ -1733,8 +1733,8 @@ HttpResponseHeaders* HttpNetworkTransaction::GetResponseHeaders() const {
              "Access-Control-Allow-Credentials", &header_value_2))
        response_.headers->AddHeader("Access-Control-Allow-Credentials", "true");
      if (response_.headers && !response_.headers->GetNormalizedHeader(
-             "X-Kiwi-Processed", &header_value_3))
-       response_.headers->AddHeader("X-Kiwi-Processed", "Yes");
+             "X-NextKiwi-Processed", &header_value_3))
+       response_.headers->AddHeader("X-NextKiwi-Processed", "Yes");
   }
 
   return response_.headers.get();

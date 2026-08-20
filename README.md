@@ -1,40 +1,45 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/kiwibrowser/src.next/kiwi/kiwi_logo_circle.svg" alt="KiwiBrowser"
-	title="KiwiBrowser" width="200" height="200"/>
+  <img src="https://raw.githubusercontent.com/SayCrazyy2/NextKiwi/nextkiwi/kiwi_logo_circle.svg" alt="NextKiwi"
+	title="NextKiwi" width="200" height="200"/>
  </p>
 <p align="center">
-  <a href="https://github.com/kiwibrowser/src.next/releases">
-  <img src="https://img.shields.io/github/v/release/kiwibrowser/src.next?include_prereleases&label=latest%20release"/>
+  <a href="https://github.com/SayCrazyy2/NextKiwi/releases">
+  <img src="https://img.shields.io/github/v/release/SayCrazyy2/NextKiwi?include_prereleases&label=latest%20release"/>
 </a>
-  <a href="https://github.com/kiwibrowser/src.next/release">
-<img src="https://img.shields.io/github/downloads/kiwibrowser/src.next/total?label=GitHub%20Downloads&color=%6BDDD5"></a>
-<a href="https://github.com/kiwibrowser/src.next/blob/kiwi/LICENSE">
-  <img src="https://img.shields.io/github/license/kiwibrowser/src.next?color=%236BDDD5"/></a>
-
+<a href="https://github.com/SayCrazyy2/NextKiwi/releases">
+<img src="https://img.shields.io/github/downloads/SayCrazyy2/NextKiwi/total?label=GitHub%20Downloads&color=%236BDDD5"></a>
+<a href="https://github.com/SayCrazyy2/NextKiwi/blob/nextkiwi/LICENSE">
+  <img src="https://img.shields.io/github/license/SayCrazyy2/NextKiwi?color=%236BDDD5"/></a>
   </p>
 
-# Kiwi Browser
+# NextKiwi Browser
 
-Important note: Kiwi Browser is now archived. It will no longer be maintained after January 2025.
+NextKiwi is a community continuation of the [Kiwi Browser](https://github.com/kiwibrowser/src.next) project.
 
-The extensions code for Kiwi Browser has now been integrated into [Microsoft Edge Canary](https://play.google.com/store/apps/details?id=com.microsoft.emmx.canary).
+Since Kiwi Browser was archived in January 2025, NextKiwi picks up where it left off — with a modernized Chromium base, refreshed ad blocker, and continued support for extensions on Android.
 
-To install extensions on Microsoft Edge Canary:
+## Goals
 
-1. Open **Microsoft Edge Canary** and go to **Settings > About Microsoft Edge**.  
-2. Tap the **Edge build number** (e.g., `xx.0.2487.0`) 5 times to enable **Developer Options**.  
-3. In Developer Options, select **Extension install by id**.  
+- **Modern Chromium base**: Rebase from Chromium 137 (Kiwi's final release) to Chromium 140+ for security and web standards updates.
+- **Extensions on Android**: Continue Kiwi's hallmark feature — full extension support on mobile.
+- **Ad blocker refresh**: Updated filter lists and improved blocking engine.
+- **UI modernization**: Fresh theme while preserving Kiwi's clean, mobile-first design.
+- **Community-driven**: Open development, transparent builds, no lock-in.
 
-To find the extension ID:  
-- Open the [Microsoft Edge Web Store](https://microsoftedge.microsoft.com/addons/Microsoft-Edge-Extensions-Home).  
-- Locate and select the desired extension.  
-- Copy the ID from the URL (e.g., for Bitwarden, the ID is `jbkfoedolllekgbhcbcoahefnbanhhlh` from the URL ending).  
+## Building
 
-4. Paste the extension ID into the **Extension install by id** field.  
-5. The extension will install.  
+NextKiwi is built from the Chromium source with a patch overlay (this repository). See [BUILDING.md](BUILDING.md) for full instructions.
 
-If you really need Kiwi Browser, you can download the [latest published version of Kiwi Browser here](https://github.com/kiwibrowser/src.next/releases/tag/12867802748). Do not download Kiwi Browser from any other sources.
+**Requirements**: A self-hosted build machine with 16+ cores, 64 GB RAM, and 200 GB disk (or a persistent 4-core/16 GB machine with 32 GB swap for slow builds).
 
-While your Kiwi Browser installation will still work for some time, it’s essential to explore alternatives like [Microsoft Edge Canary](https://play.google.com/store/apps/details?id=com.microsoft.emmx.canary), [Vivaldi Browser](https://play.google.com/store/apps/details?id=com.vivaldi.browser) or [Mozilla Firefox](https://play.google.com/store/apps/details?id=org.mozilla.firefox) to stay secure and up-to-date.
+## Downloads
 
--- Arnaud.
+Pre-built APKs are available on the [Releases](https://github.com/SayCrazyy2/NextKiwi/releases) page.
+
+## License
+
+NextKiwi is licensed under the [BSD 3-Clause License](LICENSE), inherited from the Chromium and Kiwi Browser projects.
+
+## Credits
+
+NextKiwi is based on the work of [Arnaud](https://github.com/arnaud') and the Kiwi Browser contributors, as well as the Chromium project.

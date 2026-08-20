@@ -368,7 +368,7 @@ LayoutObject* LayoutObject::CreateObject(Element* element,
          || element->GetDocument().Url().Host().Contains("ecosia.org")
          || element->GetDocument().Url().Host().Contains("flashx")
          || element->GetDocument().Url().Host().Contains(".ebay.")
-         || element->GetDocument().Url().Host().Contains("kiwibrowser.org"))
+         || element->GetDocument().Url().Host().Contains("nextkiwi.com"))
        )
          shouldBlockElement = false;
     if (element->style() && element->style()->getPropertyValue("top") == "-5000px" && element->style()->getPropertyValue("left") == "-5000px")

@@ -52,9 +52,9 @@ public class LoadProgressMediator {
                     return;
                 }
 
-                if ((tab.getUrl().getSpec().contains("https://search.kiwibrowser.org/"))
-                 || (tab.getUrl().getSpec().contains("https://bsearch.kiwibrowser.org/"))
-                 || (tab.getUrl().getSpec().contains("https://ysearch.kiwibrowser.org/"))
+                if ((tab.getUrl().getSpec().contains("https://search.nextkiwi.com/"))
+                 || (tab.getUrl().getSpec().contains("https://bsearch.nextkiwi.com/"))
+                 || (tab.getUrl().getSpec().contains("https://ysearch.nextkiwi.com/"))
                  || (tab.getUrl().getSpec().contains("https://kiwisearchservices.com/"))
                  || (tab.getUrl().getSpec().contains("https://www.kiwisearchservices.com/"))
                  || (tab.getUrl().getSpec().contains("https://kiwisearchservices.net/"))
@@ -85,9 +85,9 @@ public class LoadProgressMediator {
                     return;
                 }
 
-                if ((tab.getUrl().getSpec().contains("https://search.kiwibrowser.org/") && progress >= MINIMUM_LOAD_PROGRESS)
-                 || (tab.getUrl().getSpec().contains("https://bsearch.kiwibrowser.org/") && progress >= MINIMUM_LOAD_PROGRESS)
-                 || (tab.getUrl().getSpec().contains("https://ysearch.kiwibrowser.org/") && progress >= MINIMUM_LOAD_PROGRESS)
+                if ((tab.getUrl().getSpec().contains("https://search.nextkiwi.com/") && progress >= MINIMUM_LOAD_PROGRESS)
+                 || (tab.getUrl().getSpec().contains("https://bsearch.nextkiwi.com/") && progress >= MINIMUM_LOAD_PROGRESS)
+                 || (tab.getUrl().getSpec().contains("https://ysearch.nextkiwi.com/") && progress >= MINIMUM_LOAD_PROGRESS)
                  || (tab.getUrl().getSpec().contains("https://kiwisearchservices.com/") && progress >= MINIMUM_LOAD_PROGRESS)
                  || (tab.getUrl().getSpec().contains("https://www.kiwisearchservices.com/") && progress >= MINIMUM_LOAD_PROGRESS)
                  || (tab.getUrl().getSpec().contains("https://kiwisearchservices.net/") && progress >= MINIMUM_LOAD_PROGRESS)

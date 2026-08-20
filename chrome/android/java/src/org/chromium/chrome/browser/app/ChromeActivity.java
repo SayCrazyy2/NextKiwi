@@ -2425,7 +2425,7 @@ public abstract class ChromeActivity<C extends ChromeActivityComponent>
             String extensionUrl = "";
             if (extensionInfo.length > 2)
                 extensionUrl = extensionInfo[2];
-            Log.d("Kiwi", "Pressed extension menu: " + extensionId + " - url: " + extensionUrl);
+            Log.d("NextKiwi", "Pressed extension menu: " + extensionId + " - url: " + extensionUrl);
             Tab tab = getActivityTab();
             if (tab != null) {
                 WebContents webContents = tab.getWebContents();
@@ -2800,7 +2800,7 @@ public abstract class ChromeActivity<C extends ChromeActivityComponent>
         }
 
         if (id == R.id.night_mode_switcher_id) {
-            Log.d("Kiwi", "Initializing night mode with mode: " + ContextUtils.getAppSharedPreferences().getString("active_nightmode", "default"));
+            Log.d("NextKiwi", "Initializing night mode with mode: " + ContextUtils.getAppSharedPreferences().getString("active_nightmode", "default"));
             WebContentsDarkModeController.updateDarkModeStringSettings();
             boolean isDarkModeEnabled = ContextUtils.getAppSharedPreferences().getBoolean("darken_websites_enabled", false);
             if (!isDarkModeEnabled) {

@@ -1,65 +1,90 @@
-# Build APKs for Kiwi Browser Next
-name: 'Any branch: Build APK'
+# Build NextKiwi APK (self-hosted runner)
+name: 'NextKiwi: Build APK'
 
-# Controls when the action will run. Triggers the workflow on pull request events or manual trigger
 on:
   pull_request:
     branches:
-      - kiwi
+      - nextkiwi
   workflow_dispatch:
 
-concurrency: build_test_apk
+concurrency: build_apk
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   build:
-    # The type of runner that the job will run on
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
 
     steps:
-      - name: Get branch name
-        id: branch-name
-        uses: tj-actions/branch-names@v4.8
-    
-      - name: Building APK (if manually triggered)
-        if: github.event_name != 'pull_request'
-        run: curl --http1.0 --no-buffer -s 'http://longbuild.find.kiwi/build_apk.php?build_key=${{ secrets.BUILD_KEY }}&git_user=${{ github.repository_owner }}&git_repository=${{ github.event.repository.name }}&git_runid=${{ github.run_id }}&git_branch=${{ steps.branch-name.outputs.current_branch }}'
-
-      # Variables are from: https://docs.github.com/en/developers/webhooks-and-events/webhooks/webhook-events-and-payloads#pullrequestevent
-      # and https://docs.github.com/en/rest/reference/pulls
-      - name: Building APK (if pull request)
-        if: github.event_name == 'pull_request'
-        run: curl --http1.0 --no-buffer -s 'http://longbuild.find.kiwi/build_apk.php?build_key=${{ secrets.BUILD_KEY }}&git_user=${{ github.event.pull_request.head.repo.owner.login }}&git_repository=${{ github.event.pull_request.head.repo.name }}&git_runid=${{ github.run_id }}&git_branch=${{ github.event.pull_request.head.ref }}'
-
-      - name: Downloading APK
-        if: github.event_name != 'pull_request'
-        run: wget -q 'https://build.find.kiwi/apks/${{ github.run_id }}/out.apk'
-
-      - name: Creating release
-        if: github.event_name != 'pull_request'
-        id: create_release
-        uses: actions/create-release@v1.1.4
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Checkout NextKiwi patches
+        uses: actions/checkout@v4
         with:
-          tag_name: ${{ github.run_id }}
-          release_name: Test build ${{ github.run_id }} initiated by ${{ github.actor }}
-          draft: true
-          prerelease: true
-          body: |
-            This is a test build initiated by ${{ github.actor }}.
+          fetch-depth: 0
 
-      - name: Uploading test apk (arm64)
-        if: github.event_name != 'pull_request'
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Read build configuration
+        id: config
+        run: |
+          source CHROMIUM_VERSION
+          echo "chromium_version=${CHROMIUM_MAJOR}.${CHROMIUM_MINOR}.${CHROMIUM_BUILD}.${CHROMIUM_PATCH}" >> $GITHUB_OUTPUT
+          source NEXTKIWI_VERSION
+          echo "nextkiwi_version=${MAJOR}.${MINOR}.${BUILD}.${PATCH}" >> $GITHUB_OUTPUT
+
+      - name: Setup build environment
+        run: |
+          export PATH="$PATH:/root/nkiwi/depot_tools"
+          echo "PATH=$PATH" >> $GITHUB_ENV
+          echo "Using $(nproc) cores, $(free -h | grep Mem | awk '{print $2}') RAM"
+
+      - name: Ensure Chromium source exists
+        run: |
+          if [ ! -d /root/nkiwi/chromium/src/.git ]; then
+            echo "::warning::Chromium source not found. Run the fetch step manually first."
+            echo "See BUILDING.md for instructions on fetching Chromium source."
+            exit 1
+          fi
+          echo "Chromium source found at /root/nkiwi/chromium/src"
+
+      - name: Apply NextKiwi patches
+        run: |
+          cd /root/nkiwi/chromium/src
+          # Stash any existing changes
+          git stash || true
+          # Reset to clean Chromium state
+          git checkout .
+          # Apply NextKiwi patch overlay
+          rsync -avz --exclude='.git' --exclude='.github' --exclude='.build' \
+            --exclude='BUILDING.md' --exclude='NEXTKIWI_VERSION' \
+            $GITHUB_WORKSPACE/ ./
+          echo "Patches applied"
+
+      - name: Configure build (arm64)
+        run: |
+          cd /root/nkiwi/chromium/src
+          mkdir -p out/android_arm64
+          cat .build/production_build_reference/args.gn | \
+            sed "s#android_default_version_name = \"Git\"#android_default_version_name = \"${{ steps.config.outputs.nextkiwi_version }}\"#" > \
+            out/android_arm64/args.gn
+          sed -i "s#android_default_version_code = \"1\"#android_default_version_code = \"$(date '+%y%m%d')2\"#" \
+            out/android_arm64/args.gn
+          cat out/android_arm64/args.gn
+
+      - name: Generate build files
+        run: |
+          cd /root/nkiwi/chromium/src
+          gn gen out/android_arm64
+
+      - name: Build APK
+        run: |
+          cd /root/nkiwi/chromium/src
+          ninja -C out/android_arm64 chrome_public_apk
+
+      - name: Prepare APK for upload
+        run: |
+          cd /root/nkiwi/chromium/src/out/android_arm64/apks
+          cp ChromePublic.apk $GITHUB_WORKSPACE/NextKiwi-arm64-${{ github.run_id }}.apk || \
+            find /root/nkiwi/chromium/src/out/android_arm64 -name "*.apk" -exec cp {} $GITHUB_WORKSPACE/NextKiwi-arm64-${{ github.run_id }}.apk \;
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./out.apk
-          asset_name: ${{ github.repository_owner }}.${{ github.event.repository.name }}.${{ steps.branch-name.outputs.current_branch }}.${{ github.run_id }}-unofficial-arm64.apk
-          asset_content_type: application/vnd.android.package-archive
-
-      - name: Displaying download link
-        run: echo "Build can be downloaded at https://build.find.kiwi/apks/${{ github.run_id }}/out.apk"
-
+          name: nextkiwi-apk-arm64
+          path: NextKiwi-arm64-${{ github.run_id }}.apk
+          retention-days: 30

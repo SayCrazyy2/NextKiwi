@@ -35,7 +35,7 @@ typedef std::unordered_map<std::string, std::string> SwitchParams;
 SwitchParams ParseDarkModeSettings() {
   SwitchParams switch_params;
 
-  LOG(INFO) << "[Kiwi] ParseDarkModeSettings";
+  LOG(INFO) << "[NextKiwi] ParseDarkModeSettings";
 
   if (!base::CommandLine::ForCurrentProcess()->HasSwitch("dark-mode-settings"))
     return switch_params;
@@ -45,7 +45,7 @@ SwitchParams ParseDarkModeSettings() {
           "dark-mode-settings"),
       ",", base::TRIM_WHITESPACE, base::SPLIT_WANT_NONEMPTY);
 
-    LOG(INFO) << "[Kiwi] ParseDarkModeSettings - Read: " << base::CommandLine::ForCurrentProcess()->GetSwitchValueASCII(
+    LOG(INFO) << "[NextKiwi] ParseDarkModeSettings - Read: " << base::CommandLine::ForCurrentProcess()->GetSwitchValueASCII(
           "dark-mode-settings");
 
   for (auto param_value : param_values) {
@@ -54,7 +54,7 @@ SwitchParams ParseDarkModeSettings() {
 
     if (pair.size() == 2) {
       switch_params[base::ToLowerASCII(pair[0])] = base::ToLowerASCII(pair[1]);
-      LOG(INFO) << "[Kiwi] ParseDarkModeSettings - A: " << base::ToLowerASCII(pair[0]) << " -- " << base::ToLowerASCII(pair[1]);
+      LOG(INFO) << "[NextKiwi] ParseDarkModeSettings - A: " << base::ToLowerASCII(pair[0]) << " -- " << base::ToLowerASCII(pair[1]);
     }
   }
 

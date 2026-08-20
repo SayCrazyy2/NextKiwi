@@ -305,7 +305,7 @@ class AppMenuHandlerImpl
         int menuSize = mModelList.size();
         for (int i = 0; i < menuSize; i++) {
             if (mModelList.get(i).model.get(AppMenuItemProperties.MENU_ITEM_ID) == itemId) {
-                Log.d("Kiwi", "Comparing Menu Size of Size: " + menuSize + " and ID: " + mModelList.get(i).model.get(AppMenuItemProperties.MENU_ITEM_ID) + " and itemId: " + itemId);
+                Log.d("NextKiwi", "Comparing Menu Size of Size: " + menuSize + " and ID: " + mModelList.get(i).model.get(AppMenuItemProperties.MENU_ITEM_ID) + " and itemId: " + itemId);
                 CharSequence titleCondensed = mModelList.get(i).model.get(AppMenuItemProperties.TITLE_CONDENSED);
                 lastItemTitle = titleCondensed.toString();
                 CharSequence title = mModelList.get(i).model.get(AppMenuItemProperties.TITLE);

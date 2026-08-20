@@ -665,7 +665,7 @@ public class LocationBarModel implements ToolbarDataProvider, LocationBarDataPro
         String currentUrl = getCurrentUrl();
         if (currentUrl != null && currentUrl.startsWith("chrome://"))
             skipIconForNeutralState = true;
-        if (currentUrl != null && currentUrl.startsWith("kiwi://"))
+        if (currentUrl != null && currentUrl.startsWith("nextkiwi://"))
             skipIconForNeutralState = true;
         if (currentUrl != null && currentUrl.startsWith("chrome-search://"))
             skipIconForNeutralState = true;

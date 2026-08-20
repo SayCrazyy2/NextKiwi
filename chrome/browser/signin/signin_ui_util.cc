@@ -226,7 +226,7 @@ void ShowReauthForPrimaryAccountWithAuthErrorLacros(
     signin_metrics::AccessPoint access_point,
     account_manager::AccountManagerFacade* account_manager_facade) {
   Profile* profile = browser->profile();
->>>>>>> 1c87c96a4902c... [Kiwi] Fix profile and sync related issues
+>>>>>>> 1c87c96a4902c... [NextKiwi] Fix profile and sync related issues
   signin::IdentityManager* identity_manager =
       IdentityManagerFactory::GetForProfile(browser->profile());
   CoreAccountInfo primary_account_info =

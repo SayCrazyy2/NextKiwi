@@ -292,7 +292,7 @@ void SearchBox::FocusChanged(OmniboxFocusState new_focus_state,
 
 void SearchBox::MostVisitedInfoChanged(
     const InstantMostVisitedInfo& most_visited_info) {
-  LOG(INFO) << "[Kiwi] SearchBox::MostVisitedInfoChanged - Step 1";
+  LOG(INFO) << "[NextKiwi] SearchBox::MostVisitedInfoChanged - Step 1";
   has_received_most_visited_ = true;
 
   std::vector<InstantMostVisitedItemIDPair> last_known_items;
@@ -302,10 +302,10 @@ void SearchBox::MostVisitedInfoChanged(
     return;  // Do not send duplicate onmostvisitedchange events.
   }
 
-  LOG(INFO) << "[Kiwi] SearchBox::MostVisitedInfoChanged - Step 2";
+  LOG(INFO) << "[NextKiwi] SearchBox::MostVisitedInfoChanged - Step 2";
   most_visited_items_cache_.AddItems(most_visited_info.items);
   if (can_run_js_in_renderframe_) {
-    LOG(INFO) << "[Kiwi] SearchBox::MostVisitedInfoChanged - Dispatching";
+    LOG(INFO) << "[NextKiwi] SearchBox::MostVisitedInfoChanged - Dispatching";
     SearchBoxExtension::DispatchMostVisitedChanged(
         render_frame()->GetWebFrame());
   }
@@ -341,7 +341,7 @@ GURL SearchBox::GetURLForMostVisitedItem(InstantRestrictedID item_id) const {
 }
 
 void SearchBox::DidCommitProvisionalLoad(ui::PageTransition transition) {
-  LOG(INFO) << "[Kiwi] SearchBox::DidCommitProvisionalLoad";
+  LOG(INFO) << "[NextKiwi] SearchBox::DidCommitProvisionalLoad";
   can_run_js_in_renderframe_ = true;
 }
 

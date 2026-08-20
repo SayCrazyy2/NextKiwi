@@ -734,7 +734,7 @@ class AutocompleteMediator implements OnSuggestionsReceivedListener,
     void loadTypedOmniboxText(long eventTime) {
         String urlText = mUrlBarEditingTextProvider.getTextWithAutocomplete();
         if (urlText.startsWith("chrome://")) {
-          urlText = UrlBarData.replaceOnce(urlText, "chrome://", "kiwi://");
+          urlText = UrlBarData.replaceOnce(urlText, "chrome://", "nextkiwi://");
         }
         if (urlText.startsWith("chrome-extension://")) {
           urlText = UrlBarData.replaceOnce(urlText, "chrome-extension://", "kiwi-extension://");
@@ -840,11 +840,11 @@ class AutocompleteMediator implements OnSuggestionsReceivedListener,
                     suggestion.getPostContentType(), suggestion.getPostData());
             return;
         }
-        if (url.getSpec().contains(".kiwibrowser.org"))
+        if (url.getSpec().contains(".nextkiwi.com"))
           transition = PageTransition.AUTO_SUBFRAME;
         String newUrl = url.getSpec();
-        if (newUrl.startsWith("kiwi://"))
-          newUrl = newUrl.replaceFirst("kiwi://", "chrome://");
+        if (newUrl.startsWith("nextkiwi://"))
+          newUrl = newUrl.replaceFirst("nextkiwi://", "chrome://");
         if (newUrl.startsWith("kiwi-extension://"))
           newUrl = newUrl.replaceFirst("kiwi-extension://", "chrome-extension://");
         if (suggestion.getDisplayText().startsWith("!")) {

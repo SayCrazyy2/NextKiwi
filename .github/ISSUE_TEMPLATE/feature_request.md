@@ -1,6 +1,6 @@
 ---
 name: Feature request
-about: Suggest an idea or improvements for Kiwi Browser
+about: Suggest an idea or improvements for NextKiwi
 title: ''
 labels: enhancement
 assignees: ''

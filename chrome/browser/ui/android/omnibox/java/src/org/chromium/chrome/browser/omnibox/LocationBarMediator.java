@@ -1325,8 +1325,8 @@ class LocationBarMediator
 
     @Override
     public void loadUrlFromVoice(String url) {
-        if (url.startsWith("kiwi://")) {
-          url = UrlBarData.replaceOnce(url, "kiwi://", "chrome://");
+        if (url.startsWith("nextkiwi://")) {
+          url = UrlBarData.replaceOnce(url, "nextkiwi://", "chrome://");
         }
         if (url.startsWith("kiwi-extension://")) {
           url = UrlBarData.replaceOnce(url, "kiwi-extension://", "chrome-extension://");

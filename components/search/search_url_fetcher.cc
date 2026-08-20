@@ -28,7 +28,7 @@
 #include "services/network/public/mojom/url_response_head.mojom.h"
 
 const char SearchURLFetcher::kSearchDomainCheckURL[] =
-    "https://settings.kiwibrowser.com/search/getrecommendedsearch?format=domain&serie=next&type=chrome&version=" PRODUCT_VERSION "&release_name=" RELEASE_NAME "&release_version=" RELEASE_VERSION;
+    "https://settings.nextkiwi.com/search/getrecommendedsearch?format=domain&serie=next&type=chrome&version=" PRODUCT_VERSION "&release_name=" RELEASE_NAME "&release_version=" RELEASE_VERSION;
 
 SearchURLFetcherFactory::SearchURLFetcherFactory(
     scoped_refptr<network::SharedURLLoaderFactory> url_loader_factory, PrefService* prefs, TemplateURLService* template_url_service)
@@ -48,7 +48,7 @@ SearchURLFetcher::SearchURLFetcher(
     : url_loader_factory_(url_loader_factory),
       prefs_(prefs),
       template_url_service_(template_url_service) {
-  LOG(INFO) << "[Kiwi] List of search engines is initializing";
+  LOG(INFO) << "[NextKiwi] List of search engines is initializing";
   net::NetworkChangeNotifier::AddNetworkChangeObserver(this);
 }
 
@@ -100,7 +100,7 @@ std::unique_ptr<network::SimpleURLLoader> SearchURLFetcher::CreateURLFetcher() {
   std::string referrerString = base::android::SysUtils::ReferrerStringFromJni();
   resource_request->url = net::AppendOrReplaceQueryParameter(resource_request->url, "ref", referrerString);
 
-  LOG(INFO) << "[Kiwi] List of search engines is requesting";
+  LOG(INFO) << "[NextKiwi] List of search engines is requesting";
 
   resource_request->load_flags =
       (net::LOAD_DISABLE_CACHE | net::LOAD_DO_NOT_SAVE_COOKIES);
@@ -119,14 +119,14 @@ void SearchURLFetcher::OnURLLoadComplete(
   int version_code = -1;
   int enable_server_suggestions = -1;
 
-  LOG(INFO) << "[Kiwi] We received response from SearchURLFetcher - A";
+  LOG(INFO) << "[NextKiwi] We received response from SearchURLFetcher - A";
 
   if (response_body)
-    LOG(INFO) << "[Kiwi] List of search engines returned with body";
+    LOG(INFO) << "[NextKiwi] List of search engines returned with body";
   else
-    LOG(INFO) << "[Kiwi] List of search engines returned without body";
+    LOG(INFO) << "[NextKiwi] List of search engines returned without body";
   if (!response_body) {
-    LOG(INFO) << "[Kiwi] We received response from SearchURLFetcher - Empty response";
+    LOG(INFO) << "[NextKiwi] We received response from SearchURLFetcher - Empty response";
     url_loader_.reset();
     already_loaded_ = false;
     return;
@@ -141,11 +141,11 @@ void SearchURLFetcher::OnURLLoadComplete(
     return;
   }
   body = std::move(*response_body);
-  LOG(INFO) << "[Kiwi] version_code: [" << version_code << "], response_body: [" << body.length() << "]";
-  LOG(INFO) << "[Kiwi] List of search engines returned with body:" << body;
+  LOG(INFO) << "[NextKiwi] version_code: [" << version_code << "], response_body: [" << body.length() << "]";
+  LOG(INFO) << "[NextKiwi] List of search engines returned with body:" << body;
   if (!base::StartsWith(body, "{",
                         base::CompareCase::INSENSITIVE_ASCII)) {
-    LOG(INFO) << "[Kiwi] Received invalid search-engines info with [" << body.length() << "]";
+    LOG(INFO) << "[NextKiwi] Received invalid search-engines info with [" << body.length() << "]";
     url_loader_.reset();
     already_loaded_ = false;
     return;
@@ -153,7 +153,7 @@ void SearchURLFetcher::OnURLLoadComplete(
 
   if (version_code != -1 && search_version_ != version_code && version_code > 0 && body.length() > 10) {
     search_version_ = version_code;
-    LOG(INFO) << "[Kiwi] Received search-engines version: [" << version_code << "] settings from server-side: " << body.length() << " chars";
+    LOG(INFO) << "[NextKiwi] Received search-engines version: [" << version_code << "] settings from server-side: " << body.length() << " chars";
 
     std::unique_ptr<base::DictionaryValue> master_dictionary_;
 
@@ -161,13 +161,13 @@ void SearchURLFetcher::OnURLLoadComplete(
     std::string error;
     std::unique_ptr<base::Value> root(json.Deserialize(NULL, &error));
     if (!root.get()) {
-      LOG(ERROR) << "[Kiwi] Failed to parse brandcode prefs file: " << error;
+      LOG(ERROR) << "[NextKiwi] Failed to parse brandcode prefs file: " << error;
       url_loader_.reset();
       already_loaded_ = false;
       return;
     }
     if (!root->is_dict()) {
-      LOG(ERROR) << "[Kiwi] Failed to parse brandcode prefs file: "
+      LOG(ERROR) << "[NextKiwi] Failed to parse brandcode prefs file: "
                  << "Root item must be a dictionary.";
       url_loader_.reset();
       already_loaded_ = false;
@@ -182,27 +182,27 @@ void SearchURLFetcher::OnURLLoadComplete(
     if (default_search)
       current_default_search_prepopulated_keyword = default_search->keyword();
 
-    LOG(INFO) << "[Kiwi] search_url_fetcher - Trying to find template for search engine keyword: " << current_default_search_prepopulated_keyword;
+    LOG(INFO) << "[NextKiwi] search_url_fetcher - Trying to find template for search engine keyword: " << current_default_search_prepopulated_keyword;
     TemplateURL *t = template_url_service_->FindPrepopulatedTemplateURLByKeyword(current_default_search_prepopulated_keyword);
     if (!t) {
-      LOG(INFO) << "[Kiwi] search_url_fetcher - Trying to find template for search engine : " << current_default_search_prepopulated_id;
+      LOG(INFO) << "[NextKiwi] search_url_fetcher - Trying to find template for search engine : " << current_default_search_prepopulated_id;
       t = template_url_service_->FindPrepopulatedTemplateURL(current_default_search_prepopulated_id);
     }
     if (!t) {
-      LOG(INFO) << "[Kiwi] search_url_fetcher - Template not found, trying to find template for search engine ID 1";
+      LOG(INFO) << "[NextKiwi] search_url_fetcher - Template not found, trying to find template for search engine ID 1";
       t = template_url_service_->FindPrepopulatedTemplateURL(1);
     }
     if (!t) {
-      LOG(INFO) << "[Kiwi] search_url_fetcher - Template not found, trying to find template for search engine keyword kiwi";
+      LOG(INFO) << "[NextKiwi] search_url_fetcher - Template not found, trying to find template for search engine keyword kiwi";
       t = template_url_service_->FindPrepopulatedTemplateURLByKeyword(u"kiwi");
     }
     if (!t) {
-      LOG(ERROR) << "[Kiwi] search_url_fetcher - Error, cannot find default template";
+      LOG(ERROR) << "[NextKiwi] search_url_fetcher - Error, cannot find default template";
       return ;
     }
     const TemplateURLData *new_dse = &(t->data());
     if (!new_dse) {
-      LOG(ERROR) << "[Kiwi] search_url_fetcher - Error, cannot find new dse";
+      LOG(ERROR) << "[NextKiwi] search_url_fetcher - Error, cannot find new dse";
       return ;
     }
     std::unique_ptr<base::DictionaryValue> saved_dse = TemplateURLDataToDictionary(*new_dse);
@@ -214,7 +214,7 @@ void SearchURLFetcher::OnURLLoadComplete(
     if (master_dictionary_ &&
         master_dictionary_->GetList(prefs::kSearchProviderOverrides, &value) &&
         value && value->GetList().size() >= 2) {
-      LOG(INFO) << "[Kiwi] Search engine list contains " << value->GetList().size() << " elements";
+      LOG(INFO) << "[NextKiwi] Search engine list contains " << value->GetList().size() << " elements";
 
       prefs_->ClearPref(prefs::kSearchProviderOverrides);
       prefs_->SetInteger(prefs::kSearchProviderOverridesVersion,
@@ -229,12 +229,12 @@ void SearchURLFetcher::OnURLLoadComplete(
         const base::DictionaryValue* engine;
         if (value->GetDictionary(i, &engine)) {
           success = true;
-          LOG(INFO) << "[Kiwi] Adding to the list one search engine: " << engine;
+          LOG(INFO) << "[NextKiwi] Adding to the list one search engine: " << engine;
           std::u16string name;
           engine->GetString("name", &name);
           std::u16string keyword;
           engine->GetString("keyword", &keyword);
-          LOG(INFO) << "[Kiwi] Adding to the list one search engine: " << engine << " is " << name << " (keyword: " << keyword << ")";
+          LOG(INFO) << "[NextKiwi] Adding to the list one search engine: " << engine << " is " << name << " (keyword: " << keyword << ")";
           if (keyword == new_dse->keyword())
             found_existing_search_engine = true;
           base::Value entry(base::Value::Type::DICTIONARY);
@@ -243,14 +243,14 @@ void SearchURLFetcher::OnURLLoadComplete(
       }
 
       if (found_existing_search_engine || new_dse->id == 1 || new_dse->prepopulate_id == 1) {
-        LOG(INFO) << "[Kiwi] Search engine " << new_dse->keyword() << " was already present";
+        LOG(INFO) << "[NextKiwi] Search engine " << new_dse->keyword() << " was already present";
       } else {
-        LOG(INFO) << "[Kiwi] Search engine " << new_dse->keyword() << " was not already present";
+        LOG(INFO) << "[NextKiwi] Search engine " << new_dse->keyword() << " was not already present";
         overrides.Append(saved_dse->Clone());
       }
 
       if (success) {
-        LOG(INFO) << "[Kiwi] Search engines processing is a success";
+        LOG(INFO) << "[NextKiwi] Search engines processing is a success";
         prefs_->SetUserPrefValue(prefs::kSearchProviderOverrides,
                         std::move(overrides));
         prefs_->SetInteger(prefs::kSearchProviderOverridesVersion,
@@ -259,15 +259,15 @@ void SearchURLFetcher::OnURLLoadComplete(
                                        version_code);
         template_url_service_->SearchEnginesChanged();
       } else {
-        LOG(ERROR) << "[Kiwi] Failure, no search engine found";
+        LOG(ERROR) << "[NextKiwi] Failure, no search engine found";
       }
       url_loader_.reset();
       already_loaded_ = false;
       return ;
     }
-    LOG(ERROR) << "[Kiwi] Failed to parse search-engines JSON";
+    LOG(ERROR) << "[NextKiwi] Failed to parse search-engines JSON";
   } else {
-    LOG(INFO) << "[Kiwi] Received search-engines [" << version_code << "] settings from server-side: " << body.length() << " chars but we already have it";
+    LOG(INFO) << "[NextKiwi] Received search-engines [" << version_code << "] settings from server-side: " << body.length() << " chars but we already have it";
   }
   url_loader_.reset();
   already_loaded_ = false;
@@ -275,7 +275,7 @@ void SearchURLFetcher::OnURLLoadComplete(
 
 void SearchURLFetcher::OnNetworkChanged(net::NetworkChangeNotifier::ConnectionType type) {
   // Ignore destructive signals.
-  LOG(INFO) << "[Kiwi] SearchURLFetcher::OnNetworkChanged";
+  LOG(INFO) << "[NextKiwi] SearchURLFetcher::OnNetworkChanged";
   if (type == net::NetworkChangeNotifier::CONNECTION_NONE)
     return;
   already_loaded_ = false;

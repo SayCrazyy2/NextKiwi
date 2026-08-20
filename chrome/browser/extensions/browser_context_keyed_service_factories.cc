@@ -72,7 +72,7 @@
 namespace chrome_extensions {
 
 void EnsureBrowserContextKeyedServiceFactoriesBuilt() {
-  LOG(INFO) << "[Kiwi] chrome_extensions::EnsureBrowserContextKeyedServiceFactoriesBuilt";
+  LOG(INFO) << "[NextKiwi] chrome_extensions::EnsureBrowserContextKeyedServiceFactoriesBuilt";
   extensions::ActivityLog::GetFactoryInstance();
   extensions::ActivityLogAPI::GetFactoryInstance();
   extensions::AutofillPrivateEventRouterFactory::GetInstance();

@@ -577,7 +577,7 @@ public class ToolbarPhone extends ToolbarLayout implements OnClickListener, TabC
 +        "d.getElementsByTagName('body')[0].style.height='';"
 +        "_kbOverscroll = false;}}(document));";
         currentTab.getWebContents().evaluateJavaScript(SCRIPT, null);
-        // matching chrome-native://newtab and chrome://newtab and kiwi://newtab
+        // matching chrome-native://newtab and chrome://newtab and nextkiwi://newtab
         if (currentTab.isNativePage() && currentTab.getUrl().getSpec().contains("/newtab")) {
             View nativeView = currentTab.getView();
             DisplayAndroid display =

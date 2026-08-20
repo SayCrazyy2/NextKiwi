@@ -291,12 +291,12 @@ content::RenderFrame* GetMainRenderFrameForCurrentContext() {
 }
 
 SearchBox* GetSearchBoxForCurrentContext() {
-  LOG(INFO) << "[Kiwi] SearchBox* GetSearchBoxForCurrentContext";
+  LOG(INFO) << "[NextKiwi] SearchBox* GetSearchBoxForCurrentContext";
   content::RenderFrame* main_frame = GetMainRenderFrameForCurrentContext();
-  LOG(INFO) << "[Kiwi] SearchBox* GetSearchBoxForCurrentContext - main_frame: " << main_frame;
+  LOG(INFO) << "[NextKiwi] SearchBox* GetSearchBoxForCurrentContext - main_frame: " << main_frame;
   if (!main_frame)
     return nullptr;
-  LOG(INFO) << "[Kiwi] SearchBox* GetSearchBoxForCurrentContext - searchbox: " << SearchBox::Get(main_frame);
+  LOG(INFO) << "[NextKiwi] SearchBox* GetSearchBoxForCurrentContext - searchbox: " << SearchBox::Get(main_frame);
   return SearchBox::Get(main_frame);
 }
 
@@ -564,9 +564,9 @@ v8::Local<v8::Value> NewTabPageBindings::GetMostVisited(v8::Isolate* isolate) {
 bool NewTabPageBindings::GetMostVisitedAvailable(v8::Isolate* isolate) {
   const SearchBox* search_box = GetSearchBoxForCurrentContext();
   if (search_box)
-    LOG(INFO) << "[Kiwi] NewTabPageBindings::GetMostVisitedAvailable - search_box available";
+    LOG(INFO) << "[NextKiwi] NewTabPageBindings::GetMostVisitedAvailable - search_box available";
   else
-    LOG(INFO) << "[Kiwi] NewTabPageBindings::GetMostVisitedAvailable - search_box NOT available";
+    LOG(INFO) << "[NextKiwi] NewTabPageBindings::GetMostVisitedAvailable - search_box NOT available";
   if (!search_box)
     return false;
 

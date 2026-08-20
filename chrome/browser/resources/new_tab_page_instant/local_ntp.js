@@ -1,4 +1,4 @@
-// Copyright 2021 Geometry OU (Kiwi Browser)
+// Copyright 2021 Geometry OU (NextKiwi)
 // Copyright 2015 The Chromium Authors. All rights reserved.
 
 /* Easter egg (ASCII art) */
@@ -1074,7 +1074,7 @@ function setup_grid()
     document.areIdeasFetched = true;
     document.getElementById('explore-section').style.display = 'none';
     console.log("Fetching tiles ideas");
-    fetch('https://tiles.kiwibrowser.org/ideas/?version=2&cachebuster=' + Math.random(), { method: 'GET' })
+    fetch('https://tiles.nextkiwi.com/ideas/?version=2&cachebuster=' + Math.random(), { method: 'GET' })
         .then(function(response) {
             console.log("We received tiles ideas");
             return response.json();
