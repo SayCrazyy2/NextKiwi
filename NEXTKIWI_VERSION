@@ -1,7 +1,7 @@
 # The version to use for NextKiwi Browser
-# Based on Chromium 140 (target after rebase from Kiwi 137 base)
+# Based on Chromium 140.0.7339.264
 
 MAJOR=140
 MINOR=0
-BUILD=0
-PATCH=1
+BUILD=7339
+PATCH=264
