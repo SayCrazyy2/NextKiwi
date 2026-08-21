@@ -1,0 +1,24 @@
+diff --git a/net/http/http_network_transaction.cc b/net/http/http_network_transaction.cc
+index 4593bdcc351e6..f3d9c187b740b 100644
+--- a/net/http/http_network_transaction.cc
++++ b/net/http/http_network_transaction.cc
+@@ -2248,6 +2248,19 @@ void HttpNetworkTransaction::CacheNetErrorDetailsAndResetStream() {
+ }
+ 
+ HttpResponseHeaders* HttpNetworkTransaction::GetResponseHeaders() const {
++  if (request_ != NULL
++      && (GetHostAndOptionalPort(request_->url) == "news.google.com" || GetHostAndOptionalPort(request_->url) == "consent.google.com" || GetHostAndOptionalPort(request_->url) == "d3ward.github.io"))
++  {
++     if (response_.headers && !response_.headers->GetNormalizedHeader("Access-Control-Allow-Origin").has_value())
++       response_.headers->AddHeader("Access-Control-Allow-Origin", "chrome-search://local-ntp");
++     if (response_.headers && !response_.headers->GetNormalizedHeader("Access-Control-Expose-Headers").has_value())
++       response_.headers->AddHeader("Access-Control-Expose-Headers", "chrome-search://local-ntp");
++     if (response_.headers && !response_.headers->GetNormalizedHeader("Access-Control-Allow-Credentials").has_value())
++       response_.headers->AddHeader("Access-Control-Allow-Credentials", "true");
++     if (response_.headers && !response_.headers->GetNormalizedHeader("X-NextKiwi-Processed").has_value())
++       response_.headers->AddHeader("X-NextKiwi-Processed", "Yes");
++  }
++
+   return response_.headers.get();
+ }
+ 

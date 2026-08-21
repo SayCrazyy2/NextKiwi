@@ -1,0 +1,28 @@
+{
+  "name": "NextKiwi Build Environment",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu-24.04",
+  "features": {
+    "ghcr.io/devcontainers/features/java:1": {
+      "version": "17",
+      "jdkDistro": "tem"
+    },
+    "ghcr.io/devcontainers/features/python:1": {
+      "version": "3.12"
+    }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-vscode.cpptools",
+        "ms-vscode.cpptools-extension-pack"
+      ]
+    }
+  },
+  "postCreateCommand": "bash .devcontainer/setup.sh",
+  "hostRequirements": {
+    "cpus": 16,
+    "memory": "64gb",
+    "storage": "200gb"
+  },
+  "remoteUser": "root"
+}
