@@ -179,10 +179,7 @@ chrome/renderer/searchbox/searchbox_extension.cc
 components/history/core/browser/top_sites_impl.cc
 components/ntp_tiles/most_visited_sites.cc
 components/ntp_tiles/popular_sites_impl.cc
-components/search/search_url_fetcher.cc
-components/search/search_url_fetcher.h
 extensions/browser/event_router.cc
-net/http/http_network_transaction.cc
 remoting/android/java/src/org/chromium/chromoting/PrivacyPolicyActivity.java
 third_party/blink/renderer/core/loader/base_fetch_context.cc
 third_party/blink/renderer/platform/graphics/dark_mode_settings_builder.cc

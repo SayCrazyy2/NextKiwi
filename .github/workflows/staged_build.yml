@@ -40,6 +40,12 @@ jobs:
           sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq \
             openjdk-17-jdk-headless ninja-build ccache pkg-config git-lfs \
             curl ca-certificates python3 gperf libncurses-dev
+          # Install gh CLI for release creation
+          curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+          sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg
+          echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq gh
 
       - name: Setup depot_tools
         run: |
@@ -190,25 +196,44 @@ jobs:
           echo "=== ccache stats before ==="
           ccache -s
           
-          # Run ninja with a 5-hour timeout (300 min)
-          # -j4 for 4 cores, -l4 to limit load average
-          timeout 18000 autoninja -C out/android_arm64 -j4 chrome_public_apk 2>&1 | tail -100
+          # Run ninja with a 4.5-hour timeout (16200s)
+          # Use PIPESTATUS to capture ninja's exit code, not tail's
+          set +e
+          timeout 16200 autoninja -C out/android_arm64 -j4 chrome_public_apk > /tmp/ninja_output.log 2>&1
           EXIT_CODE=$?
+          set -e
+          
+          # Show last 100 lines of output
+          tail -100 /tmp/ninja_output.log
           
           echo "=== ninja exit code: $EXIT_CODE ==="
           echo "=== ccache stats after ==="
           ccache -s
           
+          # Find any APKs that were built
+          echo "=== Searching for APK files ==="
+          find /tmp/chromium/src/out/android_arm64 -name "*.apk" -type f 2>/dev/null || echo "No APKs found"
+          
           # Exit code 124 = timeout (expected for staged builds)
           # Exit code 0 = build complete!
           if [ $EXIT_CODE -eq 0 ]; then
-            echo "BUILD_COMPLETE=true" >> $GITHUB_ENV
-            echo "=== BUILD COMPLETE! ==="
+            # Verify APK exists
+            APK=$(find /tmp/chromium/src/out/android_arm64 -name "*.apk" -type f 2>/dev/null | head -1)
+            if [ -n "$APK" ]; then
+              echo "BUILD_COMPLETE=true" >> $GITHUB_ENV
+              echo "=== BUILD COMPLETE! APK: $APK ==="
+            else
+              echo "=== Build returned 0 but no APK found ==="
+              echo "=== Checking for build errors ==="
+              grep -i "FAILED\|error:" /tmp/ninja_output.log | tail -20 || true
+              exit 1
+            fi
           elif [ $EXIT_CODE -eq 124 ]; then
             echo "=== Build timed out, progress saved in ccache ==="
             echo "Re-run this workflow to continue from where it left off"
           else
             echo "=== Build failed with error ==="
+            grep -i "FAILED\|error:" /tmp/ninja_output.log | tail -20 || true
             exit $EXIT_CODE
           fi
 
@@ -224,27 +249,22 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: NextKiwi-arm64-apk
-          path: |
-            /tmp/chromium/src/out/android_arm64/apks/*.apk
-            /tmp/chromium/src/out/android_arm64/*.apk
+          path: /tmp/chromium/src/out/android_arm64/**/*.apk
           retention-days: 30
+          if-no-files-found: error
 
       - name: Create release
         if: env.BUILD_COMPLETE == 'true'
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: nextkiwi-140.0.7339.264
-          name: NextKiwi 140.0.7339.264
-          prerelease: true
-          files: |
-            /tmp/chromium/src/out/android_arm64/apks/*.apk
-            /tmp/chromium/src/out/android_arm64/*.apk
-          body: |
-            NextKiwi Browser 140.0.7339.264
-            
-            Based on Chromium 140 with Kiwi Browser features.
-            
-            Built via GitHub Actions staged build.
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          APK=$(find /tmp/chromium/src/out/android_arm64 -name "*.apk" -type f | head -1)
+          cp "$APK" NextKiwi-arm64.apk
+          gh release create nextkiwi-140.0.7339.264 \
+            --title "NextKiwi 140.0.7339.264" \
+            --notes "NextKiwi Browser 140.0.7339.264 - Based on Chromium 140 with Kiwi Browser features." \
+            --prerelease \
+            NextKiwi-arm64.apk || echo "Release creation failed, APK available as artifact"
 
       - name: Build status
         if: always()
