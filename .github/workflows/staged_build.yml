@@ -39,7 +39,7 @@ jobs:
           sudo apt-get update -qq
           sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq \
             openjdk-17-jdk-headless ninja-build ccache pkg-config git-lfs \
-            curl ca-certificates python3 dh-python gperf libncurses5
+            curl ca-certificates python3 gperf libncurses-dev
 
       - name: Setup depot_tools
         run: |
