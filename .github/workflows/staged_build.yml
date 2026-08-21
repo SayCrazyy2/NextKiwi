@@ -74,11 +74,8 @@ jobs:
           echo "=== Source size before cleanup ==="
           du -sh /tmp/chromium/src
           df -h /
-          # Remove .git and other large unneeded dirs to save disk
+          # Remove .git to save ~5GB disk (source tree is enough for building)
           rm -rf /tmp/chromium/src/.git
-          rm -rf /tmp/chromium/src/third_party/llvm-build/llvm-project
-          rm -rf /tmp/chromium/src/v8/test
-          rm -rf /tmp/chromium/src/third_party/blink/web_tests
           echo "=== Source size after cleanup ==="
           du -sh /tmp/chromium/src
           df -h /
