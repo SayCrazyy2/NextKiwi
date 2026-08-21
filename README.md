@@ -28,6 +28,8 @@ Since Kiwi Browser was archived in January 2025, NextKiwi picks up where it left
 
 ## Building
 
+[![Build with Ona](https://ona.com/build-with-ona.svg)](https://app.ona.com/#https://github.com/SayCrazyy2/NextKiwi)
+
 NextKiwi is built from the Chromium source with a patch overlay (this repository). See [BUILDING.md](BUILDING.md) for full instructions.
 
 **Requirements**: A self-hosted build machine with 16+ cores, 64 GB RAM, and 200 GB disk (or a persistent 4-core/16 GB machine with 32 GB swap for slow builds).
