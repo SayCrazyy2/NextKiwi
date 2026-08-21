@@ -20,9 +20,9 @@
   },
   "postCreateCommand": "bash .devcontainer/setup.sh",
   "hostRequirements": {
-    "cpus": 16,
-    "memory": "64gb",
-    "storage": "200gb"
+    "cpus": 8,
+    "memory": "32gb",
+    "storage": "64gb"
   },
   "remoteUser": "root"
 }
