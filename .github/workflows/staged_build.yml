@@ -79,9 +79,6 @@ jobs:
           rm -rf /tmp/chromium/src/third_party/llvm-build/llvm-project
           rm -rf /tmp/chromium/src/v8/test
           rm -rf /tmp/chromium/src/third_party/blink/web_tests
-          rm -rf /tmp/chromium/src/chrome/test/data
-          rm -rf /tmp/chromium/src/content/test/data
-          rm -rf /tmp/chromium/src/net/data
           echo "=== Source size after cleanup ==="
           du -sh /tmp/chromium/src
           df -h /
