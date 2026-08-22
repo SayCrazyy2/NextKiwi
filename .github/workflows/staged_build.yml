@@ -12,6 +12,9 @@ env:
   CHROMIUM_VERSION: '140.0.7339.264'
   CCACHE_DIR: /tmp/ccache
   CCACHE_MAXSIZE: '10G'
+  CCACHE_SLOPPINESS: 'include_file_mtime,include_file_ctime,system_headers,time_macros'
+  CCACHE_COMPILERCHECK: 'content'
+  CCACHE_BASEDIR: /tmp/chromium/src
   DEPOT_TOOLS: /tmp/depot_tools
 
 jobs:
@@ -186,11 +189,14 @@ jobs:
         uses: actions/cache@v4
         with:
           path: /tmp/ccache
-          key: ccache-nextkiwi-arm64-v3
+          key: ccache-nextkiwi-arm64-v4
 
       - name: Build (with timeout)
         run: |
           ccache --max-size 10G
+          ccache --set-config=sloppiness=include_file_mtime,include_file_ctime,system_headers,time_macros
+          ccache --set-config=compiler_check=content
+          ccache --set-config=base_dir=/tmp/chromium/src
           cd /tmp/chromium/src
           echo "=== Starting build at $(date) ==="
           echo "=== ccache stats before ==="
@@ -242,7 +248,7 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: /tmp/ccache
-          key: ccache-nextkiwi-arm64-v3
+          key: ccache-nextkiwi-arm64-v4
 
       - name: Upload APK
         if: env.BUILD_COMPLETE == 'true'
