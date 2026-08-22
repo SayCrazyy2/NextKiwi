@@ -189,7 +189,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: /tmp/ccache
-          key: ccache-nextkiwi-arm64-v4
+          key: ccache-nextkiwi-arm64-v5
 
       - name: Build (with timeout)
         run: |
@@ -248,7 +248,7 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: /tmp/ccache
-          key: ccache-nextkiwi-arm64-v4
+          key: ccache-nextkiwi-arm64-v5
 
       - name: Upload APK
         if: env.BUILD_COMPLETE == 'true'
