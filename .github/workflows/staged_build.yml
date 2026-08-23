@@ -318,9 +318,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: /tmp/ccache
-          key: ccache-nextkiwi-arm64-v5
+          key: ccache-nextkiwi-arm64-v5-${{ github.run_id }}
           restore-keys: |
-            ccache-nextkiwi-arm64-v5
+            ccache-nextkiwi-arm64-v5-
             ccache-nextkiwi-validate-
 
       - name: Build (with timeout)
@@ -365,7 +365,7 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: /tmp/ccache
-          key: ccache-nextkiwi-arm64-v5
+          key: ccache-nextkiwi-arm64-v5-${{ github.run_id }}
 
       - name: Upload APK
         if: env.BUILD_COMPLETE == 'true'
