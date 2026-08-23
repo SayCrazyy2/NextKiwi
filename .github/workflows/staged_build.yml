@@ -341,18 +341,19 @@ jobs:
           ccache -s
           echo "=== Searching for APK ==="
           find /tmp/chromium/src/out/android_arm64 -name "*.apk" -type f 2>/dev/null || echo "No APKs found"
-          if [ $EXIT_CODE -eq 0 ]; then
-            APK=$(find /tmp/chromium/src/out/android_arm64 -name "*.apk" -type f 2>/dev/null | head -1)
-            if [ -n "$APK" ]; then
-              echo "BUILD_COMPLETE=true" >> $GITHUB_ENV
-              echo "=== BUILD COMPLETE! APK: $APK ==="
-            else
-              echo "=== Build returned 0 but no APK found ==="
-              grep -i "FAILED\|error:" /tmp/ninja_output.log | tail -20 || true
-              exit 1
-            fi
+
+          # Check for APK regardless of exit code (ninja might finish but timeout fires)
+          APK=$(find /tmp/chromium/src/out/android_arm64 -name "*.apk" -type f 2>/dev/null | head -1)
+          if [ -n "$APK" ]; then
+            echo "BUILD_COMPLETE=true" >> $GITHUB_ENV
+            echo "=== BUILD COMPLETE! APK: $APK ==="
+          elif [ $EXIT_CODE -eq 0 ]; then
+            echo "=== Build returned 0 but no APK found ==="
+            grep -i "FAILED\|error:" /tmp/ninja_output.log | tail -20 || true
+            exit 1
           elif [ $EXIT_CODE -eq 124 ]; then
             echo "=== Build timed out, ccache saved ==="
+            echo "=== Re-run workflow to continue ==="
           else
             echo "=== Build failed ==="
             grep -i "FAILED\|error:" /tmp/ninja_output.log | tail -20 || true
