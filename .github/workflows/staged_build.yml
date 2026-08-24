@@ -318,10 +318,29 @@ jobs:
         uses: actions/cache@v4
         with:
           path: /tmp/ccache
-          key: ccache-nextkiwi-arm64-v5-${{ github.run_id }}
+          key: ccache-nextkiwi-arm64-v6-${{ github.run_id }}
           restore-keys: |
-            ccache-nextkiwi-arm64-v5-
-            ccache-nextkiwi-validate-
+            ccache-nextkiwi-arm64-v6-
+
+      - name: Restore build output (ninja state)
+        uses: actions/cache@v4
+        with:
+          path: /tmp/build_output
+          key: ninja-build-state-v1
+          restore-keys: |
+            ninja-build-state-v1
+        id: build-cache
+
+      - name: Restore previous build objects
+        if: steps.build-cache.outputs.cache-hit == 'true'
+        run: |
+          if [ -d /tmp/build_output ]; then
+            echo "=== Restoring build objects ==="
+            # Copy previous build state into the output dir
+            rsync -a /tmp/build_output/ /tmp/chromium/src/out/android_arm64/
+            echo "=== Build state restored ==="
+            du -sh /tmp/chromium/src/out/android_arm64/ || true
+          fi
 
       - name: Build (with timeout)
         run: |
@@ -332,6 +351,8 @@ jobs:
           cd /tmp/chromium/src
           echo "=== Starting build at $(date) ==="
           ccache -s
+          echo "=== Ninja targets before build ==="
+          ninja -C out/android_arm64 -n chrome_public_apk 2>&1 | wc -l
           set +e
           timeout 16200 autoninja -C out/android_arm64 -j4 chrome_public_apk > /tmp/ninja_output.log 2>&1
           EXIT_CODE=$?
@@ -365,7 +386,26 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: /tmp/ccache
-          key: ccache-nextkiwi-arm64-v5-${{ github.run_id }}
+          key: ccache-nextkiwi-arm64-v6-${{ github.run_id }}
+
+      - name: Save build output (ninja state)
+        if: always()
+        run: |
+          echo "=== Saving build state for next run ==="
+          mkdir -p /tmp/build_output
+          # Copy obj/ and gen/ and .ninja files — skip apks/ (too big, not needed for resume)
+          rsync -a --exclude='apks/' --exclude='*.apk' \
+            /tmp/chromium/src/out/android_arm64/ /tmp/build_output/ 2>/dev/null || true
+          echo "=== Build state size ==="
+          du -sh /tmp/build_output || true
+          df -h /
+
+      - name: Save build output cache
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: /tmp/build_output
+          key: ninja-build-state-v1-${{ github.run_id }}
 
       - name: Upload APK
         if: env.BUILD_COMPLETE == 'true'
