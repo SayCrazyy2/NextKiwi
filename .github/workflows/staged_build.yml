@@ -261,6 +261,18 @@ jobs:
             fi
           done
 
+      - name: Normalize source mtimes (critical for ninja resume)
+        run: |
+          # Set ALL source file mtimes to a fixed past timestamp.
+          # Restored .o files (from previous runs) have newer mtimes,
+          # so ninja will correctly consider them up-to-date and skip them.
+          # Without this, fresh source mtimes make ALL restored objs look stale.
+          echo "=== Normalizing source mtimes to 2024-01-01 ==="
+          find /tmp/chromium/src -type d -not -path '*/out/*' -exec touch -h -d '2024-01-01T00:00:00' {} + 2>/dev/null || true
+          find /tmp/chromium/src -type f -not -path '*/out/*' -exec touch -d '2024-01-01T00:00:00' {} + 2>/dev/null || true
+          echo "Done. Sample mtimes:"
+          ls -la /tmp/chromium/src/net/http/http_network_transaction.cc /tmp/chromium/src/BUILD.gn 2>/dev/null | head -3
+
       - name: Configure build
         run: |
           mkdir -p /tmp/chromium/src/out/android_arm64
