@@ -330,17 +330,17 @@ jobs:
         uses: actions/cache@v4
         with:
           path: /tmp/ccache
-          key: ccache-nextkiwi-arm64-v6-${{ github.run_id }}
+          key: ccache-minimal-v3-${{ github.run_id }}
           restore-keys: |
-            ccache-nextkiwi-arm64-v6-
+            ccache-minimal-v3-
 
       - name: Restore build output (ninja state)
         uses: actions/cache@v4
         with:
           path: /tmp/build_output
-          key: ninja-build-state-v1
+          key: ninja-state-minimal-v3-${{ github.run_id }}
           restore-keys: |
-            ninja-build-state-v1
+            ninja-state-minimal-v3-
         id: build-cache
 
       - name: Restore previous build objects
@@ -411,7 +411,7 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: /tmp/ccache
-          key: ccache-nextkiwi-arm64-v6-${{ github.run_id }}
+          key: ccache-minimal-v3-${{ github.run_id }}
 
       - name: Save build output (ninja state)
         if: always()
@@ -430,7 +430,7 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: /tmp/build_output
-          key: ninja-build-state-v1-${{ github.run_id }}
+          key: ninja-state-minimal-v3-${{ github.run_id }}
 
       - name: Upload APK
         if: env.BUILD_COMPLETE == 'true'
