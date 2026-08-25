@@ -115,18 +115,27 @@ apksigner sign --ks /path/to/nextkiwi.jks \
     NextKiwi-aligned.apk
 ```
 
-## Self-hosted GitHub Actions runner
+## GitHub Actions APK workflow (manual matrix build)
 
-NextKiwi uses a self-hosted runner for CI builds. To set up:
+NextKiwi APK CI builds now use a single manual workflow at:
 
-1. Go to **Settings → Actions → Runners → New self-hosted runner** in the repository.
-2. Follow the instructions to install the runner on your build machine.
-3. Install as a systemd service:
-   ```bash
-   sudo ./svc.sh install
-   sudo ./svc.sh start
-   ```
-4. Label the runner with `self-hosted` and `linux` (done by default).
+- `/home/runner/work/NextKiwi/NextKiwi/.github/workflows/build_apk.yml`
+
+### Workflow behavior
+
+- Trigger: `workflow_dispatch` only (manual run).
+- Runner: `ubuntu-latest` (GitHub-hosted).
+- Matrix targets: `arm`, `arm64`, `x64`.
+- Optional validation stage can clean `patches/kiwi_overlay_files.txt` before build.
+- Resumable build support uses both Actions cache and per-architecture GitHub Release state chunks.
+- Per-architecture APK artifacts are always uploaded when available.
+- Optional prerelease creation is controlled by the `create_release` input.
+
+### Workflow inputs
+
+- `skip_validation` (`yes`/`no`) — skip overlay compile validation.
+- `resume_build` (`yes`/`no`) — restore/save resumable state.
+- `create_release` (`yes`/`no`) — create a prerelease that bundles matrix APK artifacts.
 
 ## Architecture targets
 

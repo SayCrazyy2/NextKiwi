@@ -1,90 +1,498 @@
-# Build NextKiwi APK (self-hosted runner)
-name: 'NextKiwi: Build APK'
+name: 'NextKiwi: Unified APK Build'
 
 on:
-  pull_request:
-    branches:
-      - nextkiwi
   workflow_dispatch:
+    inputs:
+      skip_validation:
+        description: 'Skip overlay compile validation'
+        required: false
+        default: 'no'
+      resume_build:
+        description: 'Restore previous partial build state'
+        required: false
+        default: 'yes'
+      create_release:
+        description: 'Create prerelease with built APKs'
+        required: false
+        default: 'no'
 
-concurrency: build_apk
+permissions:
+  contents: write
+
+env:
+  CCACHE_DIR: /tmp/ccache
+  CCACHE_SLOPPINESS: 'include_file_mtime,include_file_ctime,system_headers,time_macros'
+  CCACHE_COMPILERCHECK: 'content'
+  CCACHE_BASEDIR: /tmp/chromium/src
+  DEPOT_TOOLS: /tmp/depot_tools
+
+concurrency:
+  group: nextkiwi-unified-apk
+  cancel-in-progress: false
 
 jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    if: github.event.inputs.skip_validation != 'yes'
+    outputs:
+      bad_files: ${{ steps.validate.outputs.bad_files }}
+    steps:
+      - name: Checkout NextKiwi patches
+        uses: actions/checkout@v4
+
+      - name: Read version config
+        id: config
+        run: |
+          source CHROMIUM_VERSION
+          echo "chromium_version=${CHROMIUM_MAJOR}.${CHROMIUM_MINOR}.${CHROMIUM_BUILD}.${CHROMIUM_PATCH}" >> "$GITHUB_OUTPUT"
+
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /usr/local/.ghcup
+          sudo rm -rf /usr/local/share/boost /usr/share/swift /opt/hostedtoolcache
+          sudo apt-get clean
+          docker system prune -af --volumes 2>/dev/null || true
+          sudo rm -rf /var/lib/docker
+
+      - name: Install build deps
+        run: |
+          sudo apt-get update -qq
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq \
+            openjdk-17-jdk-headless ninja-build ccache pkg-config git-lfs \
+            curl ca-certificates python3 gperf libncurses-dev
+
+      - name: Setup depot_tools
+        run: |
+          git clone --depth=1 https://chromium.googlesource.com/chromium/tools/depot_tools.git "$DEPOT_TOOLS"
+          echo -n "python3/bin" > "$DEPOT_TOOLS/python3_bin_reldir.txt"
+          mkdir -p "$DEPOT_TOOLS/python3/bin"
+          ln -sf /usr/bin/python3 "$DEPOT_TOOLS/python3/bin/python3"
+          echo "$DEPOT_TOOLS" >> "$GITHUB_PATH"
+
+      - name: Fetch Chromium source
+        run: |
+          mkdir -p /tmp/chromium && cd /tmp/chromium
+          cat > .gclient << 'EOF'
+          solutions = [
+            { "name" : 'src', "url" : 'https://chromium.googlesource.com/chromium/src.git',
+              "deps_file" : 'DEPS', "managed" : False,
+              "custom_deps" : {}, "custom_vars": {} },
+          ]
+          target_os = ["android"]
+          EOF
+          gclient sync --revision "${{ steps.config.outputs.chromium_version }}" --no-history --nohooks
+          gclient runhooks
+          rm -rf /tmp/chromium/src/.git
+
+      - name: Init git + apply patches
+        run: |
+          cd /tmp/chromium/src
+          git init && git add -A
+          git config user.email "bot@nextkiwi" && git config user.name "NextKiwi"
+          git commit -m "baseline" --no-verify
+          git apply "$GITHUB_WORKSPACE/patches/chromium140_buildfixes.patch" || true
+          git apply "$GITHUB_WORKSPACE/patches/http_network_transaction_cors_fix.patch" || true
+          while IFS= read -r file; do
+            src="$GITHUB_WORKSPACE/$file"
+            dst="/tmp/chromium/src/$file"
+            if [ -f "$src" ]; then
+              mkdir -p "$(dirname "$dst")" && cp "$src" "$dst"
+            fi
+          done < "$GITHUB_WORKSPACE/patches/kiwi_overlay_files.txt"
+
+      - name: Configure build (arm64)
+        run: |
+          mkdir -p /tmp/chromium/src/out/android_arm64
+          cat > /tmp/chromium/src/out/android_arm64/args.gn << 'EOF'
+          target_os = "android"
+          target_cpu = "arm64"
+          is_debug = false
+          is_java_debug = false
+          android_channel = "dev"
+          is_official_build = false
+          is_component_build = false
+          is_chrome_branded = false
+          is_clang = true
+          symbol_level = 0
+          exclude_unwind_tables = true
+          use_unofficial_version_number = false
+          android_default_version_code = "2608212"
+          android_keystore_name = "dev"
+          android_keystore_password = "public_password"
+          android_keystore_path = "//keystore.jks"
+          android_default_version_name = "${{ steps.config.outputs.chromium_version }}"
+          fieldtrial_testing_like_official_build = true
+          icu_use_data_file = false
+          google_api_key = "NEXTKIWI"
+          google_default_client_id = "42.apps.nextkiwi.com"
+          google_default_client_secret = "NEXTKIWI_NOT_SO_SECRET"
+          use_official_google_api_keys = false
+          ffmpeg_branding = "Chrome"
+          proprietary_codecs = true
+          enable_widevine = true
+          enable_mse_mpeg2ts_stream_parser = true
+          enable_remoting = false
+          rtc_use_h264 = false
+          v8_use_external_startup_data = true
+          update_android_aar_prebuilts = true
+          enable_extensions = false
+          enable_desktop_android_extensions = true
+          enable_guest_view = true
+          is_desktop_android = true
+          enable_pdf = false
+          enable_plugins = false
+          disable_android_lint = true
+          treat_warnings_as_errors = false
+          cc_wrapper = "ccache"
+          use_siso = false
+          EOF
+          cd /tmp/chromium/src && gn gen out/android_arm64
+
+      - name: Validate overlay files compile
+        id: validate
+        run: |
+          BAD_FILES=""
+          for f in $(grep '\.cc$' "$GITHUB_WORKSPACE/patches/kiwi_overlay_files.txt"); do
+            if ! ninja -C /tmp/chromium/src/out/android_arm64 -j4 "$(echo "$f" | sed 's|\.cc$|.o|' | sed 's|/|_|g')" 2>/tmp/val_err.txt; then
+              BAD_FILES="$BAD_FILES $f"
+            fi
+          done
+          echo "bad_files=$BAD_FILES" >> "$GITHUB_OUTPUT"
+          if [ -n "$BAD_FILES" ]; then
+            for f in $BAD_FILES; do
+              grep -v "^${f}$" "$GITHUB_WORKSPACE/patches/kiwi_overlay_files.txt" > /tmp/overlay_clean.txt
+              mv /tmp/overlay_clean.txt "$GITHUB_WORKSPACE/patches/kiwi_overlay_files.txt"
+            done
+          fi
+
+      - name: Upload cleaned overlay
+        if: steps.validate.outputs.bad_files != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: cleaned-overlay
+          path: patches/kiwi_overlay_files.txt
+          retention-days: 1
+
   build:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    needs: validate
+    if: always() && !cancelled() && (needs.validate.result == 'success' || needs.validate.result == 'skipped')
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        arch: [arm, arm64, x64]
 
     steps:
       - name: Checkout NextKiwi patches
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
-      - name: Read build configuration
+      - name: Read version config
         id: config
         run: |
           source CHROMIUM_VERSION
-          echo "chromium_version=${CHROMIUM_MAJOR}.${CHROMIUM_MINOR}.${CHROMIUM_BUILD}.${CHROMIUM_PATCH}" >> $GITHUB_OUTPUT
+          echo "chromium_version=${CHROMIUM_MAJOR}.${CHROMIUM_MINOR}.${CHROMIUM_BUILD}.${CHROMIUM_PATCH}" >> "$GITHUB_OUTPUT"
           source NEXTKIWI_VERSION
-          echo "nextkiwi_version=${MAJOR}.${MINOR}.${BUILD}.${PATCH}" >> $GITHUB_OUTPUT
+          echo "nextkiwi_version=${MAJOR}.${MINOR}.${BUILD}.${PATCH}" >> "$GITHUB_OUTPUT"
 
-      - name: Setup build environment
-        run: |
-          export PATH="$PATH:/root/nkiwi/depot_tools"
-          echo "PATH=$PATH" >> $GITHUB_ENV
-          echo "Using $(nproc) cores, $(free -h | grep Mem | awk '{print $2}') RAM"
+      - name: Download cleaned overlay
+        if: github.event.inputs.skip_validation != 'yes'
+        uses: actions/download-artifact@v4
+        with:
+          name: cleaned-overlay
+          path: patches/
+        continue-on-error: true
 
-      - name: Ensure Chromium source exists
+      - name: Free disk space
         run: |
-          if [ ! -d /root/nkiwi/chromium/src/.git ]; then
-            echo "::warning::Chromium source not found. Run the fetch step manually first."
-            echo "See BUILDING.md for instructions on fetching Chromium source."
-            exit 1
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /usr/local/.ghcup
+          sudo rm -rf /usr/local/share/boost /usr/share/swift /opt/hostedtoolcache
+          sudo apt-get clean
+          docker system prune -af --volumes 2>/dev/null || true
+          sudo rm -rf /var/lib/docker
+
+      - name: Install build deps + gh CLI
+        run: |
+          sudo apt-get update -qq
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq \
+            openjdk-17-jdk-headless ninja-build ccache pkg-config git-lfs \
+            curl ca-certificates python3 gperf libncurses-dev gh
+
+      - name: Setup depot_tools
+        run: |
+          git clone --depth=1 https://chromium.googlesource.com/chromium/tools/depot_tools.git "$DEPOT_TOOLS"
+          echo -n "python3/bin" > "$DEPOT_TOOLS/python3_bin_reldir.txt"
+          mkdir -p "$DEPOT_TOOLS/python3/bin"
+          ln -sf /usr/bin/python3 "$DEPOT_TOOLS/python3/bin/python3"
+          echo "$DEPOT_TOOLS" >> "$GITHUB_PATH"
+
+      - name: Resolve architecture vars
+        id: arch
+        run: |
+          case "${{ matrix.arch }}" in
+            arm)
+              echo "target_cpu=arm" >> "$GITHUB_OUTPUT"
+              echo "version_code_suffix=1" >> "$GITHUB_OUTPUT"
+              echo "ccache_maxsize=5G" >> "$GITHUB_OUTPUT"
+              ;;
+            arm64)
+              echo "target_cpu=arm64" >> "$GITHUB_OUTPUT"
+              echo "version_code_suffix=2" >> "$GITHUB_OUTPUT"
+              echo "ccache_maxsize=10G" >> "$GITHUB_OUTPUT"
+              ;;
+            x64)
+              echo "target_cpu=x64" >> "$GITHUB_OUTPUT"
+              echo "version_code_suffix=4" >> "$GITHUB_OUTPUT"
+              echo "ccache_maxsize=8G" >> "$GITHUB_OUTPUT"
+              ;;
+            *)
+              echo "Unsupported architecture: ${{ matrix.arch }}" >&2
+              exit 1
+              ;;
+          esac
+
+      - name: Fetch Chromium source
+        run: |
+          mkdir -p /tmp/chromium && cd /tmp/chromium
+          cat > .gclient << 'EOF'
+          solutions = [
+            { "name" : 'src', "url" : 'https://chromium.googlesource.com/chromium/src.git',
+              "deps_file" : 'DEPS', "managed" : False,
+              "custom_deps" : {}, "custom_vars": {} },
+          ]
+          target_os = ["android"]
+          EOF
+          gclient sync --revision "${{ steps.config.outputs.chromium_version }}" --no-history --nohooks
+          gclient runhooks
+          rm -rf /tmp/chromium/src/.git
+
+      - name: Init git + apply patches
+        run: |
+          cd /tmp/chromium/src
+          git init && git add -A
+          git config user.email "bot@nextkiwi" && git config user.name "NextKiwi"
+          git commit -m "baseline" --no-verify
+          git apply "$GITHUB_WORKSPACE/patches/chromium140_buildfixes.patch" || true
+          git apply "$GITHUB_WORKSPACE/patches/http_network_transaction_cors_fix.patch" || true
+          while IFS= read -r file; do
+            src="$GITHUB_WORKSPACE/$file"
+            dst="/tmp/chromium/src/$file"
+            if [ -f "$src" ]; then
+              mkdir -p "$(dirname "$dst")" && cp "$src" "$dst"
+            fi
+          done < "$GITHUB_WORKSPACE/patches/kiwi_overlay_files.txt"
+          for f in $(find /tmp/chromium/src/net/http/http_network_transaction.cc \
+                     /tmp/chromium/src/components/search/search_url_fetcher.cc \
+                     /tmp/chromium/src/components/search/search_url_fetcher.h 2>/dev/null); do
+            if [ -f "$f" ]; then
+              sed -i 's#include "base/bind.h"#include "base/functional/bind.h"#' "$f" 2>/dev/null || true
+              sed -i 's#include "base/callback.h"#include "base/functional/callback.h"#' "$f" 2>/dev/null || true
+              sed -i 's#include "base/callback_helpers.h"#include "base/functional/callback_helpers.h"#' "$f" 2>/dev/null || true
+            fi
+          done
+
+      - name: Normalize source mtimes
+        run: |
+          find /tmp/chromium/src -type d -not -path '*/out/*' -exec touch -h -d '2024-01-01T00:00:00' {} + 2>/dev/null || true
+          find /tmp/chromium/src -type f -not -path '*/out/*' -exec touch -d '2024-01-01T00:00:00' {} + 2>/dev/null || true
+
+      - name: Configure build
+        run: |
+          OUT_DIR="/tmp/chromium/src/out/android_${{ matrix.arch }}"
+          mkdir -p "$OUT_DIR"
+          cat > "$OUT_DIR/args.gn" << EOF
+          target_os = "android"
+          target_cpu = "${{ steps.arch.outputs.target_cpu }}"
+          is_debug = false
+          is_java_debug = false
+          android_channel = "dev"
+          is_official_build = false
+          is_component_build = false
+          is_chrome_branded = false
+          is_clang = true
+          symbol_level = 0
+          exclude_unwind_tables = true
+          use_unofficial_version_number = false
+          android_default_version_code = "$(date '+%y%m%d')${{ steps.arch.outputs.version_code_suffix }}"
+          android_keystore_name = "dev"
+          android_keystore_password = "public_password"
+          android_keystore_path = "//keystore.jks"
+          android_default_version_name = "${{ steps.config.outputs.nextkiwi_version }}"
+          fieldtrial_testing_like_official_build = true
+          icu_use_data_file = false
+          google_api_key = "NEXTKIWI"
+          google_default_client_id = "42.apps.nextkiwi.com"
+          google_default_client_secret = "NEXTKIWI_NOT_SO_SECRET"
+          use_official_google_api_keys = false
+          ffmpeg_branding = "Chrome"
+          proprietary_codecs = true
+          enable_widevine = true
+          enable_mse_mpeg2ts_stream_parser = true
+          enable_remoting = false
+          rtc_use_h264 = false
+          v8_use_external_startup_data = true
+          update_android_aar_prebuilts = true
+          enable_extensions = false
+          enable_desktop_android_extensions = true
+          enable_guest_view = true
+          is_desktop_android = true
+          enable_pdf = false
+          enable_plugins = false
+          disable_android_lint = true
+          treat_warnings_as_errors = false
+          cc_wrapper = "ccache"
+          use_siso = false
+          EOF
+          cd /tmp/chromium/src && gn gen "out/android_${{ matrix.arch }}"
+          keytool -genkey -v -keystore /tmp/chromium/src/keystore.jks -alias dev \
+            -keyalg RSA -keysize 2048 -validity 10000 \
+            -storepass public_password -keypass public_password \
+            -dname "cn=NextKiwi, ou=Build, o=NextKiwi, c=GitHub" || true
+
+      - name: Restore ccache
+        if: github.event.inputs.resume_build == 'yes'
+        uses: actions/cache@v4
+        with:
+          path: /tmp/ccache
+          key: ccache-nextkiwi-${{ matrix.arch }}-${{ steps.config.outputs.chromium_version }}-${{ github.run_id }}
+          restore-keys: |
+            ccache-nextkiwi-${{ matrix.arch }}-${{ steps.config.outputs.chromium_version }}-
+
+      - name: Restore build output cache
+        if: github.event.inputs.resume_build == 'yes'
+        uses: actions/cache@v4
+        id: build-cache
+        with:
+          path: /tmp/build_output
+          key: ninja-state-nextkiwi-${{ matrix.arch }}-${{ steps.config.outputs.chromium_version }}-${{ github.run_id }}
+          restore-keys: |
+            ninja-state-nextkiwi-${{ matrix.arch }}-${{ steps.config.outputs.chromium_version }}-
+
+      - name: Restore previous build objects
+        if: github.event.inputs.resume_build == 'yes' && steps.build-cache.outputs.cache-hit == 'true'
+        run: |
+          rsync -a /tmp/build_output/ "/tmp/chromium/src/out/android_${{ matrix.arch }}/" || true
+
+      - name: Restore build state from release cache
+        if: github.event.inputs.resume_build == 'yes' && steps.build-cache.outputs.cache-hit != 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p /tmp/state_restore
+          gh release download "build-state-cache-${{ matrix.arch }}" -p "state_${{ matrix.arch }}.tar.part*" -D /tmp/state_restore || true
+          if ls /tmp/state_restore/state_${{ matrix.arch }}.tar.part* 1> /dev/null 2>&1; then
+            cd /tmp/chromium/src
+            cat /tmp/state_restore/state_${{ matrix.arch }}.tar.part* | tar -xf -
           fi
-          echo "Chromium source found at /root/nkiwi/chromium/src"
 
-      - name: Apply NextKiwi patches
+      - name: Normalize build output mtimes
         run: |
-          cd /root/nkiwi/chromium/src
-          # Stash any existing changes
-          git stash || true
-          # Reset to clean Chromium state
-          git checkout .
-          # Apply NextKiwi patch overlay
-          rsync -avz --exclude='.git' --exclude='.github' --exclude='.build' \
-            --exclude='BUILDING.md' --exclude='NEXTKIWI_VERSION' \
-            $GITHUB_WORKSPACE/ ./
-          echo "Patches applied"
+          find "/tmp/chromium/src/out/android_${{ matrix.arch }}" -exec touch -d '2025-06-01T00:00:00' {} + 2>/dev/null || true
 
-      - name: Configure build (arm64)
+      - name: Build with timeout
         run: |
-          cd /root/nkiwi/chromium/src
-          mkdir -p out/android_arm64
-          cat .build/production_build_reference/args.gn | \
-            sed "s#android_default_version_name = \"Git\"#android_default_version_name = \"${{ steps.config.outputs.nextkiwi_version }}\"#" > \
-            out/android_arm64/args.gn
-          sed -i "s#android_default_version_code = \"1\"#android_default_version_code = \"$(date '+%y%m%d')2\"#" \
-            out/android_arm64/args.gn
-          cat out/android_arm64/args.gn
+          ccache --max-size "${{ steps.arch.outputs.ccache_maxsize }}"
+          ccache --set-config=sloppiness="$CCACHE_SLOPPINESS"
+          ccache --set-config=compiler_check="$CCACHE_COMPILERCHECK"
+          ccache --set-config=base_dir="$CCACHE_BASEDIR"
+          cd /tmp/chromium/src
+          set +e
+          timeout 16200 autoninja -C "out/android_${{ matrix.arch }}" -j4 chrome_public_apk > /tmp/ninja_output_${{ matrix.arch }}.log 2>&1
+          EXIT_CODE=$?
+          set -e
+          tail -100 /tmp/ninja_output_${{ matrix.arch }}.log || true
+          APK=$(find "/tmp/chromium/src/out/android_${{ matrix.arch }}" -name "*.apk" -type f 2>/dev/null | head -1)
+          if [ -n "$APK" ]; then
+            echo "BUILD_COMPLETE=true" >> "$GITHUB_ENV"
+          elif [ "$EXIT_CODE" -eq 124 ]; then
+            echo "BUILD_COMPLETE=false" >> "$GITHUB_ENV"
+          else
+            grep -i "FAILED\|error:" /tmp/ninja_output_${{ matrix.arch }}.log | tail -20 || true
+            exit "$EXIT_CODE"
+          fi
 
-      - name: Generate build files
-        run: |
-          cd /root/nkiwi/chromium/src
-          gn gen out/android_arm64
+      - name: Save ccache
+        if: always() && github.event.inputs.resume_build == 'yes'
+        uses: actions/cache/save@v4
+        with:
+          path: /tmp/ccache
+          key: ccache-nextkiwi-${{ matrix.arch }}-${{ steps.config.outputs.chromium_version }}-${{ github.run_id }}
 
-      - name: Build APK
+      - name: Save build output cache
+        if: always() && github.event.inputs.resume_build == 'yes'
         run: |
-          cd /root/nkiwi/chromium/src
-          ninja -C out/android_arm64 chrome_public_apk
+          mkdir -p /tmp/build_output
+          rsync -a --exclude='apks/' --exclude='*.apk' \
+            "/tmp/chromium/src/out/android_${{ matrix.arch }}/" /tmp/build_output/ 2>/dev/null || true
 
-      - name: Prepare APK for upload
+      - name: Persist build output cache
+        if: always() && github.event.inputs.resume_build == 'yes'
+        uses: actions/cache/save@v4
+        with:
+          path: /tmp/build_output
+          key: ninja-state-nextkiwi-${{ matrix.arch }}-${{ steps.config.outputs.chromium_version }}-${{ github.run_id }}
+
+      - name: Save build state chunks to release cache
+        if: always() && github.event.inputs.resume_build == 'yes' && env.BUILD_COMPLETE != 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          cd /root/nkiwi/chromium/src/out/android_arm64/apks
-          cp ChromePublic.apk $GITHUB_WORKSPACE/NextKiwi-arm64-${{ github.run_id }}.apk || \
-            find /root/nkiwi/chromium/src/out/android_arm64 -name "*.apk" -exec cp {} $GITHUB_WORKSPACE/NextKiwi-arm64-${{ github.run_id }}.apk \;
+          gh release view "build-state-cache-${{ matrix.arch }}" >/dev/null 2>&1 || \
+            gh release create "build-state-cache-${{ matrix.arch }}" --title "NextKiwi state cache (${{ matrix.arch }})" --notes "Automated persistent state chunks" --prerelease
+          for asset in $(gh release view "build-state-cache-${{ matrix.arch }}" --json assets --jq '.assets[].name' | grep '^state_${{ matrix.arch }}.tar.part' || true); do
+            gh release delete-asset "build-state-cache-${{ matrix.arch }}" "$asset" -y || true
+          done
+          cd /tmp/chromium/src
+          tar --exclude='*.apk' -cf - "out/android_${{ matrix.arch }}" | split -b 1900m - "/tmp/state_${{ matrix.arch }}.tar.part"
+          gh release upload "build-state-cache-${{ matrix.arch }}" /tmp/state_${{ matrix.arch }}.tar.part* --clobber
 
       - name: Upload APK artifact
+        if: env.BUILD_COMPLETE == 'true'
         uses: actions/upload-artifact@v4
         with:
-          name: nextkiwi-apk-arm64
-          path: NextKiwi-arm64-${{ github.run_id }}.apk
+          name: nextkiwi-apk-${{ matrix.arch }}
+          path: /tmp/chromium/src/out/android_${{ matrix.arch }}/**/*.apk
           retention-days: 30
+          if-no-files-found: error
+
+  release:
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.event.inputs.create_release == 'yes'
+    steps:
+      - name: Read version config
+        id: config
+        run: |
+          source NEXTKIWI_VERSION
+          echo "nextkiwi_version=${MAJOR}.${MINOR}.${BUILD}.${PATCH}" >> "$GITHUB_OUTPUT"
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: apks
+
+      - name: Prepare release notes
+        run: |
+          cat > release_notes.md << EOT
+          # NextKiwi ${{ steps.config.outputs.nextkiwi_version }}
+
+          Unified manual GitHub-hosted matrix build.
+
+          ## Architectures
+          - arm64
+          - arm
+          - x64
+
+          Built from commit ${{ github.sha }} (run ${{ github.run_id }}).
+          EOT
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: nextkiwi-${{ steps.config.outputs.nextkiwi_version }}-${{ github.run_id }}
+          name: NextKiwi ${{ steps.config.outputs.nextkiwi_version }} (${{ github.run_id }})
+          body_path: release_notes.md
+          prerelease: true
+          files: apks/**/*.apk
