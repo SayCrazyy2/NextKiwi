@@ -354,6 +354,19 @@ jobs:
             du -sh /tmp/chromium/src/out/android_arm64/ || true
           fi
 
+      - name: Normalize build output mtimes (critical for ninja resume)
+        run: |
+          # Set ALL restored build outputs to a uniform timestamp NEWER than
+          # sources (2024-01-01). This makes ninja consider every restored
+          # target up-to-date, skipping them entirely. Only genuinely missing
+          # targets get built fresh. Without this, hook-generated files with
+          # current timestamps cause selective invalidation against stale
+          # gen/ headers -> mixed-state compile errors.
+          echo "=== Normalizing build output mtimes to 2025-06-01 ==="
+          find /tmp/chromium/src/out/android_arm64 -exec touch -d '2025-06-01T00:00:00' {} + 2>/dev/null || true
+          echo "Done. Dry-run pending target count:"
+          cd /tmp/chromium/src && ninja -C out/android_arm64 -n chrome_public_apk 2>&1 | wc -l
+
       - name: Build (with timeout)
         run: |
           ccache --max-size 10G
